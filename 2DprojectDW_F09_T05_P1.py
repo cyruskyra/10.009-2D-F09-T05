@@ -124,4 +124,5 @@ except KeyboardInterrupt:
 
 # Stops PWM and cleans up GPIO
 p.stop()
+pTwo.stop()
 GPIO.cleanup()
