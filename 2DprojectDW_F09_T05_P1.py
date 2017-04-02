@@ -2,7 +2,13 @@
 """
 Created on Sat Apr 01 13:54:13 2017
 
-@author: Kyra
+@authors:
+F09 T05
+Ang Wei Shan | 1002083 
+Cyrus Wang | 1002176
+John Chan | 1002056
+Wu Jiayue | 1002360
+Yang Lujia | 1002204
 """
 
 import os
@@ -12,7 +18,7 @@ import subprocess
 import RPi.GPIO as GPIO
 from libdw import sm
 
-########## Temperature Sensor Setup ##########
+########## Temperature Reading Function ##########
 
 # Issue the 'modprobe' commands that are needed to start the interface running
 os.system('modprobe w1-gpio')
@@ -44,7 +50,7 @@ def readTemp():
         tempC = float(tempString) / 1000.0
         return tempC
 
-########## GPIO Setup ##########
+########## GPIO and PWM Setup ##########
 
 # Use the BCM GPIO numbers as the numbering scheme
 GPIO.setmode(GPIO.BCM)
@@ -52,19 +58,34 @@ GPIO.setmode(GPIO.BCM)
 # Use GPIO17, GPIO18 and GPIO26 for the motor
 motor = [17,18,26]
 
-# Set GPIO17, GPIO18 and GPIO26 as output
-GPIO.setup(motor, GPIO.OUT)
+# Use GPIO5, GPIO6 and GPIO12 for the fan
+fan = [5,6,12]
 
-# Set GPIO26 as PWM with frequency = 100Hz
-p = GPIO.PWM(motor[2],100)
+# Set motor and fan GPIOs as output
+GPIO.setup(motor, GPIO.OUT)
+GPIO.setup(fan, GPIO.OUT)
+
+# Set GPIO26 (for the motor) and GPIO12 (for the fan) as PWM with frequency = 100Hz
+p = GPIO.PWM(motor[2],100.0)
+pTwo = GPIO.PWM(fan[2],100.0)
 
 # Start PWM
-p.start(0)
+p.start(0.0)
+pTwo.start(0.0)
+
+########## PWM control function ##########
+
+# Changes PWM duty cycle based on the input of a tuple
+# Tuple contains (pump power,fan power)
+# Values range from 0.0 to 1.0
+def pwmAdjust(power):
+    p.ChangeDutyCycle(power[0]*100.0)
+    pTwo.ChangeDutyCycle(power[1]*100.0)
 
 ########## State Machine ##########
 
 # Set target temperature
-desiredTemp = 20.0
+desiredTemp = 27.0
 
 # inp is current temperature
 # state is last recorded temperature
@@ -74,9 +95,9 @@ class Controller(sm.SM):
     startstate = readTemp()
     def getNextValues(self, state, inp):
         if inp > desiredTemp:
-            return (readTemp(),1.0)
+            return (readTemp(),(1.0,1.0))
         else:
-            return (readTemp(),0.0)
+            return (readTemp(),(0.0,0.0))
 
 # Begin pump operation
 GPIO.output(motor[0],True)    
@@ -90,8 +111,8 @@ Control.start()
 try:
     while True:
         Temp = readTemp()
-        print Temp
-        p.ChangeDutyCycle(Control.step(Temp)*100)
+        power = Control.step(Temp)
+        pwmAdjust(power)
         time.sleep(0.1)
 except KeyboardInterrupt:
     pass
