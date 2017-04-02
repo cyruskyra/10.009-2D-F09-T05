@@ -95,9 +95,9 @@ class Controller(sm.SM):
     startstate = readTemp()
     def getNextValues(self, state, inp):
         if inp > desiredTemp:
-            return (readTemp(),(1.0,1.0))
+            return (inp,(1.0,1.0))
         else:
-            return (readTemp(),(0.0,0.0))
+            return (inp,(0.0,0.0))
 
 ########## Program ##########
 
