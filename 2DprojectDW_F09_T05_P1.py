@@ -89,7 +89,7 @@ desiredTemp = 27.0
 
 # inp is current temperature
 # state is last recorded temperature
-# If inp above desiredTemp, 100% power
+# If inp above desiredTemp, 100% power for both pump and fan
 # If inp below desiredTemp, 0% power
 class Controller(sm.SM):
     startstate = readTemp()
@@ -99,6 +99,8 @@ class Controller(sm.SM):
         else:
             return (readTemp(),(0.0,0.0))
 
+########## Program ##########
+
 # Begin pump operation
 GPIO.output(motor[0],True)    
 GPIO.output(motor[1],False)
@@ -107,7 +109,10 @@ GPIO.output(motor[1],False)
 Control = Controller()
 Control.start()
 
-# Run state machine until user interrupts with an input
+# Runs until user interrupts with an input
+# Calls function to read temperature
+# Moves the state machine to next state
+# Uses the output to output a PWM signal
 try:
     while True:
         Temp = readTemp()
