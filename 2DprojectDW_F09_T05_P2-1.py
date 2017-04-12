@@ -89,6 +89,7 @@ def pwmAdjust(power):
 # Proportionality is error between the current and target temperature
 # Derivative is change in the error over time
 # States are a dictionary containing the errors and times from the last 20 steps
+# Values in these lists are averaged for the derivative calculation
 # inp is current temperature 
 class Controller(sm.SM):
     targetTemp = 27.0 # Change your target temperature here
@@ -100,7 +101,7 @@ class Controller(sm.SM):
         kd = 0.1 # Derivative constant
         error = inp - state['targetTemp']
         currentTime = time.time()
-        errorDelta = (error - state['lastErrors'][19]) / (currentTime - state['lastTimes'][19])
+        errorDelta = (error - (sum(state['lastErrors'])/20)) / (currentTime - (sum(state['lastTimes'])/20))
         powerOut = kp*error + kd*errorDelta
         newLastErrors = state['lastErrors']
         newLastErrors.insert(0,error)
