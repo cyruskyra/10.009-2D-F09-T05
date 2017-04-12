@@ -2,8 +2,15 @@
 """
 Created on Tue Apr 11 07:30:30 2017
 
-@author: Kyra
+@authors:
+F09 T05
+Ang Wei Shan | 1002083 
+Cyrus Wang | 1002176
+John Chan | 1002056
+Wu Jiayue | 1002360
+Yang Lujia | 1002204
 """
+# Begin this simulator first before starting the gui controller
 
 import simpy
 import math
@@ -17,7 +24,7 @@ ser = serial.Serial(
         parity = serial.PARITY_NONE,
         stopbits = serial.STOPBITS_ONE,
         bytesize = serial.EIGHTBITS,
-        timeout = 1
+        timeout = 0.5
         )
 
 
@@ -119,8 +126,8 @@ class HeatExchanger:
                 ser.flushInput()
             except ValueError:
                 powerPump = 0.0
-            print powerPump
-            
+            print 'inp  {}'.format(powerPump)
+
             # If the pump is powered, adds to the powerConsumption container
             # 100 % pump power is 5 W of power
             # When the week ends, the powerConsumption container is reset
@@ -140,12 +147,18 @@ class HeatExchanger:
             nusselt = 3.66 + (0.065 * reynolds * prandtl * (hydrauDia/tubeLength))/(1 + 0.04 * (reynolds * prandtl * (hydrauDia/tubeLength))**(2/3))
             flowCoeff = (615.4 * nusselt) / hydrauDia
             
-            # If the pump is powered, room temperature water is continuously introduced to the system
-            # Thus, tubeHeat.level remains at room temperature, and thermal resistance is calculated with forced convection
+            # If the pump is powered, room temperature water is continuously introduced to the system to replace the heated water
+            # Thus, tubeHeat.level loses heat, and thermal resistance is calculated with forced convection
             # However, if the pump is unpowered, the water in the tubes will gain heat from the algae water
-            if flowVelocity != 0:
+            if flowVelocity > 0.2:
                 self.tubeHeat.get(self.tubeHeat.level)
                 self.tubeHeat.put(783.053)
+                combiThermRes = 4.28494 + (1/(flowCoeff * 0.001257))
+            elif flowVelocity != 0 and flowVelocity < 0.2:
+                displaced = math.pi * (0.001**2) * flowVelocity
+                totalVol = math.pi * (0.001**2) * 0.2
+                waterHeatDiff = ((displaced/totalVol) * self.tubeHeat.level) - (displaced * 1000 * 298.15 * 4178)
+                self.tubeHeat.get(waterHeatDiff)
                 combiThermRes = 4.28494 + (1/(flowCoeff * 0.001257))
             else:
                 combiThermRes = 5.34434
@@ -165,6 +178,6 @@ class HeatExchanger:
                 
 # Initiate and run the environment
 # Run this script at the same time as the controller
-env = simpy.rt.RealtimeEnvironment(factor=1.0)
+env = simpy.rt.RealtimeEnvironment()
 HeatExchanger = HeatExchanger(env)
 env.run()
