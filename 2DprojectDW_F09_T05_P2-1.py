@@ -97,8 +97,8 @@ class Controller(sm.SM):
     timeOne = time.time()
     startState = {'lastErrors' : [errorOne]*20,'lastTimes' : [timeOne]*20,'targetTemp' : targetTemp}
     def getNextValues(self, state, inp):
-        kp = 0.3 # Proportionality constant
-        kd = 0.1 # Derivative constant
+        kp = 0.7 # Proportionality constant
+        kd = 0.4 # Derivative constant
         error = inp - state['targetTemp']
         currentTime = time.time()
         errorDelta = (error - (sum(state['lastErrors'])/20)) / (currentTime - (sum(state['lastTimes'])/20))
